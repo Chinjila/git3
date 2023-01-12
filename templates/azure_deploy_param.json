@@ -1,18 +1,21 @@
 {
-    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
-    "contentVersion": "1.0.0.0",
-    "parameters": {
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
       "appName": {
-        "value": "[format('fnapp{0}', uniqueString(resourceGroup().id))]"
+          "value": "fnappqnqnyqtw6qxze"
       },
       "storageAccountType": {
-        "value": "Standard_LRS"
+          "value": "Standard_LRS"
       },
       "location": {
-        "value": "[resourceGroup().location]"
+          "value": "eastus"
+      },
+      "appInsightsLocation": {
+          "value": "eastus"
       },
       "runtime": {
-        "value": "dotnet"
+          "value": "dotnet"
       }
-    }
   }
+}
