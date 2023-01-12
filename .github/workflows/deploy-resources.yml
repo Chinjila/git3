@@ -6,9 +6,12 @@ on:
     branches:    
       - 'test-branch'
 env:
-  rg_name: 'git2-rg'
-  location: 'eastus'
-  
+  RG_NAME: 'git2-rg'
+  LOCATION: 'eastus'
+  AZURE_FUNCTIONAPP_NAME: 'vcgit2'   # set this to your function app name on Azure
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: '.'       # set this to the path to your function app project, defaults to the repository root
+  DOTNET_VERSION: '6.0.x'                   # set this to the dotnet version to use (e.g. '2.1.x', '3.1.x', '5.0.x')
+ 
 jobs:
    create_resources:
      runs-on: ubuntu-latest
@@ -22,12 +25,32 @@ jobs:
            creds: ${{secrets.AZURE_CREDENTIAL}}
            
        - run: |
-           az group create -l ${{env.location}} -g ${{env.rg_name}}
+           az group create -l ${{env.LOCATION}} -g ${{env.RG_NAME}}
    
        - name: Deploy Azure Resource Manager (ARM) Template
          uses: Azure/arm-deploy@v1.0.9
          with:
-           resourceGroupName: ${{env.rg_name}}
+           resourceGroupName: ${{env.RG_NAME}}
            template: ./templates/azure_deploy.json
-           parameters: ./templates/azure_deploy_param.json
-     
+           parameters: ./templates/azure_deploy_param.json location=${{env.LOCATION}} appName=${{env.AZURE_FUNCTIONAPP_NAME}}
+       
+       - name: Setup DotNet ${{ env.DOTNET_VERSION }} Environment
+         uses: actions/setup-dotnet@v3
+         with:
+           dotnet-version: ${{ env.DOTNET_VERSION }}
+
+       - name: 'Resolve Project Dependencies Using Dotnet'
+         shell: bash # For Linux, use bash
+         run: |
+           pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+           dotnet build --configuration Release --output ./output
+           popd
+       
+       - name: 'Run Azure Functions Action'
+         uses: Azure/functions-action@v1
+         id: fa
+         with:
+           app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+           package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/output'
+           publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }} # Remove publish-profile to use Azure RBAC
+
